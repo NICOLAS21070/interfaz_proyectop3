@@ -1,0 +1,98 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-10">
+
+  <h1 class="text-5xl font-bold text-white text-center mb-12">
+    Sistema Inmobiliario
+  </h1>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+    <%= for propiedad <- @propiedades do %>
+
+      <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
+
+        <div class="bg-blue-600 text-white p-5">
+
+          <h2 class="text-3xl font-bold capitalize">
+            <%= propiedad.tipo %>
+          </h2>
+
+          <p class="opacity-80 mt-1">
+            <%= propiedad.modalidad %>
+          </p>
+
+        </div>
+
+        <div class="p-6 space-y-3 text-gray-700">
+
+          <p>
+            <span class="font-bold">ID:</span>
+            <%= propiedad.id %>
+          </p>
+
+          <p>
+            <span class="font-bold">Ubicación:</span>
+            <%= propiedad.ubicacion %>
+          </p>
+
+          <p>
+            <span class="font-bold">Precio:</span>
+            $<%= propiedad.precio %>
+          </p>
+
+          <p>
+            <span class="font-bold">Habitaciones:</span>
+            <%= propiedad.habitaciones %>
+          </p>
+
+          <p>
+            <span class="font-bold">Área:</span>
+            <%= propiedad.area %> m²
+          </p>
+
+          <p>
+            <span class="font-bold">Estado:</span>
+
+            <span class={[
+              "px-3 py-1 rounded-full text-white text-sm",
+              propiedad.estado == "disponible" && "bg-green-500",
+              propiedad.estado == "reservada" && "bg-yellow-500",
+              propiedad.estado == "vendida" && "bg-red-500"
+            ]}>
+              <%= propiedad.estado %>
+            </span>
+          </p>
+
+          <p>
+            <span class="font-bold">Propietario:</span>
+            <%= propiedad.propietario %>
+          </p>
+
+        </div>
+
+        <div class="p-6 flex gap-4">
+
+          <button
+            phx-click="comprar"
+            phx-value-id={propiedad.id}
+            class="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition"
+          >
+            Comprar
+          </button>
+
+          <button
+            phx-click="reservar"
+            phx-value-id={propiedad.id}
+            class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white py-3 rounded-xl font-bold transition"
+          >
+            Reservar
+          </button>
+
+        </div>
+
+      </div>
+
+    <% end %>
+
+  </div>
+
+</div>
