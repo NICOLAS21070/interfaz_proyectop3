@@ -23,14 +23,16 @@ defmodule InmobiliariaWebWeb.PropertiesLive do
 
     {:ok,
      assign(socket,
-       usuario: usuario,
-       rol: rol,
-       propiedades: propiedades,
-       propiedades_filtradas: propiedades,
-       filtros: filtros,
-       mensaje: nil
-     )}
-  end
+      usuario: usuario,
+      rol: rol,
+      propiedades: propiedades,
+      propiedades_filtradas: propiedades,
+      filtros: filtros,
+      mensaje: nil,
+      editando_id: nil,
+      form_edicion: %{}
+      )
+    }end
 
   # =========================
   # CARGA POR ROL
@@ -248,6 +250,154 @@ defmodule InmobiliariaWebWeb.PropertiesLive do
          )}
     end
   end
+
+  # =========================
+# EDITAR PROPIEDAD
+# =========================
+
+@impl true
+def handle_event("editar", %{"id" => id}, socket) do
+  case PropertyManager.find_property(id) do
+    {:ok, propiedad} ->
+      cond do
+        socket.assigns.rol not in ["vendedor", "arrendador"] ->
+          {:noreply,
+           assign(socket,
+             mensaje: "❌ Solo vendedores o arrendadores pueden editar propiedades"
+           )}
+
+        propiedad.propietario != socket.assigns.usuario ->
+          {:noreply,
+           assign(socket,
+             mensaje: "❌ Solo puedes editar tus propias propiedades"
+           )}
+
+        true ->
+          form_edicion = %{
+            "tipo" => propiedad.tipo,
+            "ubicacion" => propiedad.ubicacion,
+            "precio" => to_string(propiedad.precio),
+            "habitaciones" => to_string(propiedad.habitaciones),
+            "area" => to_string(propiedad.area)
+          }
+
+          {:noreply,
+           assign(socket,
+             editando_id: id,
+             form_edicion: form_edicion,
+             mensaje: nil
+           )}
+      end
+
+    {:error, _reason} ->
+      {:noreply,
+       assign(socket,
+         mensaje: "❌ No se encontró la propiedad"
+       )}
+  end
+end
+
+@impl true
+def handle_event("cancelar_edicion", _params, socket) do
+  {:noreply,
+   assign(socket,
+     editando_id: nil,
+     form_edicion: %{},
+     mensaje: nil
+   )}
+end
+
+@impl true
+def handle_event("guardar_edicion", params, socket) do
+  id = socket.assigns.editando_id
+
+  case PropertyManager.find_property(id) do
+    {:ok, propiedad_actual} ->
+      cond do
+        socket.assigns.rol not in ["vendedor", "arrendador"] ->
+          {:noreply,
+           assign(socket,
+             mensaje: "❌ Solo vendedores o arrendadores pueden editar propiedades"
+           )}
+
+        propiedad_actual.propietario != socket.assigns.usuario ->
+          {:noreply,
+           assign(socket,
+             mensaje: "❌ No puedes editar una propiedad que no es tuya"
+           )}
+
+        true ->
+          propiedad_editada = %{
+            propiedad_actual
+            | tipo: params["tipo"],
+              ubicacion: params["ubicacion"],
+              precio: parse_integer(params["precio"]),
+              habitaciones: parse_integer(params["habitaciones"]),
+              area: parse_float(params["area"])
+          }
+
+          actualizar_propiedad_en_archivo(propiedad_editada)
+
+          recargar_propiedades(socket, "✅ Propiedad actualizada correctamente")
+          |> then(fn {:noreply, socket_actualizado} ->
+            {:noreply,
+             assign(socket_actualizado,
+               editando_id: nil,
+               form_edicion: %{}
+             )}
+          end)
+      end
+
+    {:error, _reason} ->
+      {:noreply,
+       assign(socket,
+         mensaje: "❌ No se encontró la propiedad"
+       )}
+  end
+end
+
+defp actualizar_propiedad_en_archivo(propiedad_editada) do
+  propiedades =
+    PropertyManager.load_properties()
+    |> Enum.map(fn propiedad ->
+      if propiedad.id == propiedad_editada.id do
+        propiedad_editada
+      else
+        propiedad
+      end
+    end)
+
+  lineas =
+    Enum.map(propiedades, fn propiedad ->
+      "#{propiedad.id};#{propiedad.tipo};#{propiedad.modalidad};#{propiedad.ubicacion};#{propiedad.precio};#{propiedad.habitaciones};#{propiedad.area};#{propiedad.estado};#{propiedad.propietario}"
+    end)
+
+  File.write!(
+    "data/properties.dat",
+    Enum.join(lineas, "\n") <> "\n"
+  )
+end
+
+defp parse_integer(value) do
+  value
+  |> String.trim()
+  |> String.to_integer()
+end
+
+defp parse_float(value) do
+  value =
+    value
+    |> String.trim()
+    |> String.replace(",", ".")
+
+  if String.contains?(value, ".") do
+    String.to_float(value)
+  else
+    value
+    |> String.to_integer()
+    |> Kernel.*(1.0)
+  end
+end
 
   # =========================
   # RECARGAR CONSERVANDO ROL Y FILTROS

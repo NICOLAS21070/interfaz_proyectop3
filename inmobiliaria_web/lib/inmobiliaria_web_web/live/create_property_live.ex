@@ -7,33 +7,39 @@ defmodule InmobiliariaWebWeb.CreatePropertyLive do
 
   @impl true
   def mount(params, _session, socket) do
-  usuario = Map.get(params, "usuario", nil)
-  rol = Map.get(params, "rol", nil)
+    usuario = Map.get(params, "usuario", nil)
+    rol = Map.get(params, "rol", nil)
 
-  modalidad =
-    case rol do
-      "vendedor" -> "venta"
-      "arrendador" -> "arriendo"
-      _ -> nil
-    end
+    modalidad =
+      case rol do
+        "vendedor" -> "venta"
+        "arrendador" -> "arriendo"
+        _ -> nil
+      end
 
-  {:ok,
-   assign(socket,
-     usuario: usuario,
-     rol: rol,
-     modalidad: modalidad,
-     mensaje: nil
-   )}
-end
+    {:ok,
+     assign(socket,
+       usuario: usuario,
+       rol: rol,
+       modalidad: modalidad,
+       mensaje: nil
+     )}
+  end
 
   @impl true
   def handle_event("guardar", params, socket) do
     cond do
       is_nil(socket.assigns.usuario) ->
-        {:noreply, assign(socket, mensaje: "❌ Debes iniciar sesión para publicar una propiedad")}
+        {:noreply,
+         assign(socket,
+           mensaje: "❌ Debes iniciar sesión para publicar una propiedad"
+         )}
 
       socket.assigns.rol not in ["vendedor", "arrendador"] ->
-        {:noreply, assign(socket, mensaje: "❌ Solo vendedores o arrendadores pueden publicar propiedades")}
+        {:noreply,
+         assign(socket,
+           mensaje: "❌ Solo vendedores o arrendadores pueden publicar propiedades"
+         )}
 
       true ->
         guardar_propiedad(params, socket)
@@ -71,7 +77,9 @@ end
         {:noreply,
          socket
          |> put_flash(:info, "✅ Propiedad publicada correctamente")
-         |> push_navigate(to: "/propiedades?usuario=#{socket.assigns.usuario}&rol=#{socket.assigns.rol}")}
+         |> push_navigate(
+           to: "/propiedades?usuario=#{socket.assigns.usuario}&rol=#{socket.assigns.rol}"
+         )}
 
       {:error, :already_exists} ->
         {:noreply, assign(socket, mensaje: "❌ La propiedad ya existe")}
