@@ -1,45 +1,15 @@
 defmodule InmobiliariaWebWeb.HomeLive do
   use InmobiliariaWebWeb, :live_view
 
-  alias ProyectoInmobiliaria.PropertyManager
-
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
+    usuario = Map.get(params, "usuario", nil)
+    rol = Map.get(params, "rol", nil)
 
     {:ok,
-      assign(socket,
-        propiedades: PropertyManager.load_properties()
-      )}
-
-  end
-
-  @impl true
-  def handle_event("comprar", %{"id" => id}, socket) do
-
-    PropertyManager.update_property_state(
-      id,
-      "vendida"
-    )
-
-    {:noreply,
-      assign(socket,
-        propiedades: PropertyManager.load_properties()
-      )}
-
-  end
-
-  @impl true
-  def handle_event("reservar", %{"id" => id}, socket) do
-
-    PropertyManager.update_property_state(
-      id,
-      "reservada"
-    )
-
-    {:noreply,
-      assign(socket,
-        propiedades: PropertyManager.load_properties()
-      )}
-
+     assign(socket,
+       usuario: usuario,
+       rol: rol
+     )}
   end
 end

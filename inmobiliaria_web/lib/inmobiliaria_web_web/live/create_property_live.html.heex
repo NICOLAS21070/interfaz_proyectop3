@@ -1,69 +1,192 @@
-<div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-10">
+<div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
 
-  <div class="max-w-2xl mx-auto bg-white rounded-3xl shadow-2xl p-10">
+  <nav class="w-full bg-slate-950/90 border-b border-white/10 px-8 py-4">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <.link navigate={"/?usuario=#{@usuario}&rol=#{@rol}"} class="text-white text-xl font-bold">
+        🏠 Sistema Inmobiliario
+      </.link>
 
-    <h1 class="text-4xl font-extrabold text-center text-purple-700 mb-8">
-      🏠 Publicar Propiedad
-    </h1>
+      <div class="flex items-center gap-4">
+        <.link navigate={"/?usuario=#{@usuario}&rol=#{@rol}"} class="text-slate-200 hover:text-white transition">
+          Inicio
+        </.link>
 
-    <form phx-submit="guardar" class="space-y-6">
+        <.link navigate={"/propiedades?usuario=#{@usuario}&rol=#{@rol}"} class="text-slate-200 hover:text-white transition">
+          Propiedades
+        </.link>
 
-      <div>
-        <label class="block text-lg font-bold mb-2">
-          Título
-        </label>
+        <%= if @rol in ["vendedor", "arrendador"] do %>
+          <.link navigate={"/crear-propiedad?usuario=#{@usuario}&rol=#{@rol}"} class="text-white font-bold">
+            Crear propiedad
+          </.link>
+        <% end %>
 
-        <input
-          type="text"
-          name="titulo"
-          class="w-full border-2 border-purple-300 rounded-xl p-4"
-          placeholder="Casa moderna..."
-        />
+        <.link navigate={"/ranking?usuario=#{@usuario}&rol=#{@rol}"} class="text-slate-200 hover:text-white transition">
+          Ranking
+        </.link>
+
+        <.link navigate={"/mensajes?usuario=#{@usuario}&rol=#{@rol}"} class="text-slate-200 hover:text-white transition">
+          Mensajes
+        </.link>
+
+        <.link navigate={"/resultados?usuario=#{@usuario}&rol=#{@rol}"} class="text-slate-200 hover:text-white transition">
+          Resultados
+        </.link>
+
+        <.link navigate={~p"/login"} class="text-slate-200 hover:text-white transition">
+          Cerrar sesión
+        </.link>
       </div>
+    </div>
+  </nav>
 
-      <div>
-        <label class="block text-lg font-bold mb-2">
-          Ubicación
-        </label>
+  <main class="p-10">
+    <div class="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-10 text-slate-900">
 
-        <input
-          type="text"
-          name="ubicacion"
-          class="w-full border-2 border-purple-300 rounded-xl p-4"
-          placeholder="Medellín..."
-        />
-      </div>
+      <%= if is_nil(@usuario) do %>
+        <h1 class="text-4xl font-extrabold text-center text-red-600 mb-6">
+          Acceso requerido
+        </h1>
 
-      <div>
-        <label class="block text-lg font-bold mb-2">
-          Precio
-        </label>
+        <p class="text-center text-slate-600 mb-8">
+          Debes iniciar sesión para publicar una propiedad.
+        </p>
 
-        <input
-          type="number"
-          name="precio"
-          class="w-full border-2 border-purple-300 rounded-xl p-4"
-          placeholder="450000000"
-        />
-      </div>
+        <div class="text-center">
+          <.link navigate={~p"/login"} class="inline-block rounded-xl bg-purple-600 text-white px-8 py-4 font-bold hover:bg-purple-700 transition">
+            Ir a iniciar sesión
+          </.link>
+        </div>
+      <% else %>
 
-      <button
-        class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 rounded-xl text-xl font-bold hover:scale-105 transition">
+        <%= if @rol not in ["vendedor", "arrendador"] do %>
+          <h1 class="text-4xl font-extrabold text-center text-red-600 mb-6">
+            No tienes permiso para publicar
+          </h1>
 
-        Publicar Propiedad
+          <p class="text-center text-slate-600 mb-8">
+            Solo los usuarios con rol de vendedor o arrendador pueden publicar propiedades.
+          </p>
 
-      </button>
+          <div class="text-center">
+            <.link navigate={"/?usuario=#{@usuario}&rol=#{@rol}"} class="inline-block rounded-xl bg-purple-600 text-white px-8 py-4 font-bold hover:bg-purple-700 transition">
+              Volver al inicio
+            </.link>
+          </div>
+        <% else %>
 
-    </form>
+          <h1 class="text-4xl font-extrabold text-center text-purple-700 mb-4">
+            <%= if @rol == "vendedor" do %>
+              🏠 Publicar propiedad en venta
+            <% else %>
+              🏠 Publicar propiedad en arriendo
+            <% end %>
+          </h1>
 
-    <%= if @mensaje do %>
+          <p class="text-center text-slate-500 mb-8">
+            Publicador:
+            <span class="font-bold capitalize"><%= @usuario %></span>
+            |
+            Modalidad:
+            <span class="font-bold capitalize"><%= @modalidad %></span>
+          </p>
 
-      <div class="mt-6 bg-green-100 text-green-700 p-4 rounded-xl font-bold">
-        <%= @mensaje %>
-      </div>
+          <form phx-submit="guardar" class="space-y-6">
 
-    <% end %>
+            <div>
+              <label class="block text-lg font-bold mb-2">
+                Tipo
+              </label>
 
-  </div>
+              <select
+                name="tipo"
+                class="w-full border-2 border-purple-300 rounded-xl p-4 text-slate-900"
+                required
+              >
+                <option value="casa">Casa</option>
+                <option value="apartamento">Apartamento</option>
+                <option value="oficina">Oficina</option>
+                <option value="lote">Lote</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-lg font-bold mb-2">
+                Ubicación
+              </label>
+
+              <input
+                type="text"
+                name="ubicacion"
+                class="w-full border-2 border-purple-300 rounded-xl p-4 text-slate-900 placeholder:text-slate-400"
+                placeholder="Ubicación"
+                required
+              />
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div>
+                <label class="block text-lg font-bold mb-2">
+                  Precio
+                </label>
+
+                <input
+                  type="number"
+                  name="precio"
+                  class="w-full border-2 border-purple-300 rounded-xl p-4 text-slate-900 placeholder:text-slate-400"
+                  placeholder="Precio"
+                  required
+                />
+              </div>
+
+              <div>
+                <label class="block text-lg font-bold mb-2">
+                  Habitaciones
+                </label>
+
+                <input
+                  type="number"
+                  name="habitaciones"
+                  class="w-full border-2 border-purple-300 rounded-xl p-4 text-slate-900 placeholder:text-slate-400"
+                  placeholder="Habitaciones"
+                  required
+                />
+              </div>
+
+              <div>
+                <label class="block text-lg font-bold mb-2">
+                  Área m²
+                </label>
+
+                <input
+                  type="number"
+                  step="0.1"
+                  name="area"
+                  class="w-full border-2 border-purple-300 rounded-xl p-4 text-slate-900 placeholder:text-slate-400"
+                  placeholder="Área"
+                  required
+                />
+              </div>
+            </div>
+
+            <button
+              class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 rounded-xl text-xl font-bold hover:scale-105 transition"
+            >
+              Publicar propiedad
+            </button>
+
+          </form>
+
+          <%= if @mensaje do %>
+            <div class="mt-6 bg-green-100 text-green-700 p-4 rounded-xl font-bold">
+              <%= @mensaje %>
+            </div>
+          <% end %>
+
+        <% end %>
+      <% end %>
+
+    </div>
+  </main>
 
 </div>

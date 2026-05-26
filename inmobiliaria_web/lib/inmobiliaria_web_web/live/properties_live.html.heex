@@ -1,69 +1,156 @@
-<div class="min-h-screen bg-gray-100 p-10">
+<div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
 
-  <h1 class="text-5xl font-bold text-center mb-10">
-    🏠 Sistema Inmobiliario
-  </h1>
+  <nav class="w-full bg-slate-950/90 border-b border-white/10 px-8 py-4">
+  <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <.link navigate={"/?usuario=#{@usuario}&rol=#{@rol}"} class="text-white text-xl font-bold">
+      🏠 Sistema Inmobiliario
+    </.link>
 
-  <%= if @mensaje do %>
-    <div class="bg-green-200 p-4 rounded mb-8 text-center font-bold">
-      <%= @mensaje %>
+    <div class="flex items-center gap-4">
+      <.link navigate={"/?usuario=#{@usuario}&rol=#{@rol}"} class="text-slate-200 hover:text-white transition">
+        Inicio
+      </.link>
+
+      <.link navigate={"/propiedades?usuario=#{@usuario}&rol=#{@rol}"} class="text-white font-bold">
+        Propiedades
+      </.link>
+
+      <%= if @rol in ["vendedor", "arrendador"] do %>
+        <.link navigate={"/crear-propiedad?usuario=#{@usuario}&rol=#{@rol}"} class="text-slate-200 hover:text-white transition">
+          Crear propiedad
+        </.link>
+      <% end %>
+
+      <.link navigate={"/ranking?usuario=#{@usuario}&rol=#{@rol}"} class="text-slate-200 hover:text-white transition">
+        Ranking
+      </.link>
+
+      <.link navigate={"/mensajes?usuario=#{@usuario}&rol=#{@rol}"} class="text-slate-200 hover:text-white transition">
+        Mensajes
+      </.link>
+
+      <.link navigate={"/resultados?usuario=#{@usuario}&rol=#{@rol}"} class="text-slate-200 hover:text-white transition">
+        Resultados
+      </.link>
+
+      <.link navigate={~p"/login"} class="text-slate-200 hover:text-white transition">
+        Cerrar sesión
+      </.link>
     </div>
-  <% end %>
+  </div>
+</nav>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+  <main class="p-10">
+    <h1 class="text-5xl font-bold text-white text-center mb-12">
+      Propiedades disponibles
+    </h1>
 
-    <%= for propiedad <- @propiedades do %>
+    <%= if @mensaje do %>
+      <div class="max-w-3xl mx-auto bg-green-100 text-green-700 p-4 rounded-xl mb-8 text-center font-bold">
+        <%= @mensaje %>
+      </div>
+    <% end %>
 
-      <div class="bg-white rounded-2xl shadow-xl p-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 
-        <h2 class="text-2xl font-bold mb-4">
-          Propiedad <%= propiedad.id %>
-        </h2>
+      <%= for propiedad <- @propiedades do %>
 
-        <p><b>Tipo:</b> <%= propiedad.tipo %></p>
+        <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
 
-        <p><b>Modalidad:</b> <%= propiedad.modalidad %></p>
+          <div class="bg-blue-600 text-white p-5">
+            <h2 class="text-3xl font-bold capitalize">
+              <%= propiedad.tipo %>
+            </h2>
 
-        <p><b>Ubicación:</b> <%= propiedad.ubicacion %></p>
+            <p class="text-blue-100 mt-1 capitalize">
+              <%= propiedad.modalidad %>
+            </p>
+          </div>
 
-        <p><b>Precio:</b> $<%= propiedad.precio %></p>
+          <div class="p-6 space-y-3 text-slate-900">
+            <p>
+              <span class="font-bold">ID:</span>
+              <%= propiedad.id %>
+            </p>
 
-        <p><b>Estado:</b> <%= propiedad.estado %></p>
+            <p>
+              <span class="font-bold">Ubicación:</span>
+              <%= propiedad.ubicacion %>
+            </p>
 
-        <p><b>Propietario:</b> <%= propiedad.propietario %></p>
+            <p>
+              <span class="font-bold">Precio:</span>
+              $<%= propiedad.precio %>
+            </p>
 
-        <div class="flex flex-col gap-3 mt-6">
+            <p>
+              <span class="font-bold">Habitaciones:</span>
+              <%= propiedad.habitaciones %>
+            </p>
 
-          <button
-            phx-click="comprar"
-            phx-value-id={propiedad.id}
-            class="bg-green-500 hover:bg-green-700 text-white p-3 rounded-xl"
-          >
-            Comprar
-          </button>
+            <p>
+              <span class="font-bold">Área:</span>
+              <%= propiedad.area %> m²
+            </p>
 
-          <button
-            phx-click="arrendar"
-            phx-value-id={propiedad.id}
-            class="bg-blue-500 hover:bg-blue-700 text-white p-3 rounded-xl"
-          >
+            <p>
+              <span class="font-bold">Estado:</span>
+
+              <span class={[
+                "px-3 py-1 rounded-full text-white text-sm font-semibold",
+                propiedad.estado == "disponible" && "bg-green-500",
+                propiedad.estado == "reservada" && "bg-yellow-500",
+                propiedad.estado == "vendida" && "bg-red-500",
+                propiedad.estado == "arrendada" && "bg-blue-500"
+              ]}>
+                <%= propiedad.estado %>
+              </span>
+            </p>
+
+            <p>
+              <span class="font-bold">Propietario:</span>
+              <%= propiedad.propietario %>
+            </p>
+          </div>
+
+          <div class="p-6 flex flex-col gap-3">
+
+            <%= if propiedad.modalidad == "venta" do %>
+              <button
+              phx-click="comprar"
+              phx-value-id={propiedad.id}
+              class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition"
+            >
+            Comprar / Vender
+              </button>
+            <% end %>
+
+            <%= if propiedad.modalidad == "arriendo" do %>
+              <button
+                phx-click="arrendar"
+                phx-value-id={propiedad.id}
+                class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-bold transition"
+                 >
             Arrendar
-          </button>
+              </button>
+            <% end %>
 
-          <button
-            phx-click="disponible"
-            phx-value-id={propiedad.id}
-            class="bg-yellow-500 hover:bg-yellow-700 text-white p-3 rounded-xl"
-          >
-            Disponible
-          </button>
+            <%= if @rol in ["vendedor", "arrendador"] and propiedad.propietario == @usuario do %>
+            <button
+              phx-click="disponible"
+              phx-value-id={propiedad.id}
+            class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-3 rounded-xl font-bold transition"
+              >
+            Marcar disponible
+            </button>
+            <% end %>
+          </div>
 
         </div>
 
-      </div>
+      <% end %>
 
-    <% end %>
-
-  </div>
+    </div>
+  </main>
 
 </div>

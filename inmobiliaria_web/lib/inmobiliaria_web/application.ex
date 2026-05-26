@@ -8,26 +8,26 @@ defmodule InmobiliariaWeb.Application do
 
     children = [
 
-      InmobiliariaWebWeb.Telemetry,
+  InmobiliariaWebWeb.Telemetry,
 
-      InmobiliariaWeb.Repo,
+  # InmobiliariaWeb.Repo,
 
-      {
-        DNSCluster,
-        query:
-          Application.get_env(
-            :inmobiliaria_web,
-            :dns_cluster_query
-          ) || :ignore
-      },
+  {
+    DNSCluster,
+    query:
+      Application.get_env(
+        :inmobiliaria_web,
+        :dns_cluster_query
+      ) || :ignore
+  },
 
-      {
-        Phoenix.PubSub,
-        name: InmobiliariaWeb.PubSub
-      },
+  {
+    Phoenix.PubSub,
+    name: InmobiliariaWeb.PubSub
+  },
 
-      InmobiliariaWebWeb.Endpoint
-    ]
+  InmobiliariaWebWeb.Endpoint
+]
 
     opts = [
       strategy: :one_for_one,

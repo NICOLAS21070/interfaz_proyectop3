@@ -1,98 +1,138 @@
-<div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-10">
+<div class="min-h-screen bg-slate-900 text-white">
 
-  <h1 class="text-5xl font-bold text-white text-center mb-12">
-    Sistema Inmobiliario
-  </h1>
-
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-
-    <%= for propiedad <- @propiedades do %>
-
-      <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
-
-        <div class="bg-blue-600 text-white p-5">
-
-          <h2 class="text-3xl font-bold capitalize">
-            <%= propiedad.tipo %>
-          </h2>
-
-          <p class="opacity-80 mt-1">
-            <%= propiedad.modalidad %>
-          </p>
-
-        </div>
-
-        <div class="p-6 space-y-3 text-gray-700">
-
-          <p>
-            <span class="font-bold">ID:</span>
-            <%= propiedad.id %>
-          </p>
-
-          <p>
-            <span class="font-bold">Ubicación:</span>
-            <%= propiedad.ubicacion %>
-          </p>
-
-          <p>
-            <span class="font-bold">Precio:</span>
-            $<%= propiedad.precio %>
-          </p>
-
-          <p>
-            <span class="font-bold">Habitaciones:</span>
-            <%= propiedad.habitaciones %>
-          </p>
-
-          <p>
-            <span class="font-bold">Área:</span>
-            <%= propiedad.area %> m²
-          </p>
-
-          <p>
-            <span class="font-bold">Estado:</span>
-
-            <span class={[
-              "px-3 py-1 rounded-full text-white text-sm",
-              propiedad.estado == "disponible" && "bg-green-500",
-              propiedad.estado == "reservada" && "bg-yellow-500",
-              propiedad.estado == "vendida" && "bg-red-500"
-            ]}>
-              <%= propiedad.estado %>
-            </span>
-          </p>
-
-          <p>
-            <span class="font-bold">Propietario:</span>
-            <%= propiedad.propietario %>
-          </p>
-
-        </div>
-
-        <div class="p-6 flex gap-4">
-
-          <button
-            phx-click="comprar"
-            phx-value-id={propiedad.id}
-            class="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition"
-          >
-            Comprar
-          </button>
-
-          <button
-            phx-click="reservar"
-            phx-value-id={propiedad.id}
-            class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white py-3 rounded-xl font-bold transition"
-          >
-            Reservar
-          </button>
-
-        </div>
-
+  <nav class="w-full bg-slate-950/90 border-b border-white/10 px-8 py-4">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="text-white text-xl font-bold">
+        🏠 Sistema Inmobiliario
       </div>
+
+      <div class="flex items-center gap-4">
+        <%= if @usuario do %>
+          <span class="text-slate-300">
+            Usuario:
+            <strong class="text-white"><%= @usuario %></strong>
+            |
+            Rol:
+            <strong class="text-white capitalize"><%= @rol %></strong>
+          </span>
+
+          <.link navigate={~p"/login"} class="rounded-xl bg-red-500 px-5 py-2 text-white font-bold hover:bg-red-600 transition">
+            Cerrar sesión
+          </.link>
+        <% else %>
+          <.link navigate={~p"/login"} class="rounded-xl bg-purple-600 px-5 py-2 text-white font-bold hover:bg-purple-700 transition">
+            Login
+          </.link>
+
+          <.link navigate={~p"/registro"} class="rounded-xl bg-pink-600 px-5 py-2 text-white font-bold hover:bg-pink-700 transition">
+            Registrarse
+          </.link>
+        <% end %>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-8 py-20 text-center">
+
+    <%= if is_nil(@usuario) do %>
+      <h1 class="text-6xl font-bold mb-6">
+        Sistema Inmobiliario
+      </h1>
+
+      <p class="text-xl text-slate-300 mb-12">
+        Inicia sesión o regístrate para acceder al sistema.
+      </p>
+
+      <div class="flex justify-center gap-6">
+        <.link navigate={~p"/login"} class="rounded-3xl bg-purple-600 px-10 py-6 text-white font-bold shadow-xl hover:-translate-y-1 transition">
+          Iniciar sesión
+        </.link>
+
+        <.link navigate={~p"/registro"} class="rounded-3xl bg-pink-600 px-10 py-6 text-white font-bold shadow-xl hover:-translate-y-1 transition">
+          Registrarse
+        </.link>
+      </div>
+    <% else %>
+
+      <h1 class="text-6xl font-bold mb-6">
+        Bienvenido, <span class="capitalize"><%= @usuario %></span>
+      </h1>
+
+      <p class="text-xl text-slate-300 mb-12">
+        Interfaz para rol:
+        <span class="font-bold text-white capitalize"><%= @rol %></span>
+      </p>
+
+      <%= if @rol == "cliente" do %>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <.link navigate={"/propiedades?usuario=#{@usuario}&rol=#{@rol}"} class="rounded-3xl bg-white p-8 text-slate-900 font-bold shadow-xl hover:-translate-y-1 transition">
+            Ver propiedades
+          </.link>
+
+          <.link navigate={"/mensajes?usuario=#{@usuario}&rol=#{@rol}"} class="rounded-3xl bg-emerald-600 p-8 text-white font-bold shadow-xl hover:-translate-y-1 transition">
+            Mensajes
+          </.link>
+
+          <.link navigate={"/ranking?usuario=#{@usuario}&rol=#{@rol}"} class="rounded-3xl bg-blue-600 p-8 text-white font-bold shadow-xl hover:-translate-y-1 transition">
+            Ranking
+          </.link>
+
+          <.link navigate={"/resultados?usuario=#{@usuario}&rol=#{@rol}"} class="rounded-3xl bg-orange-500 p-8 text-white font-bold shadow-xl hover:-translate-y-1 transition">
+            Resultados
+          </.link>
+        </div>
+      <% end %>
+
+      <%= if @rol == "vendedor" do %>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+          <.link navigate={"/crear-propiedad?usuario=#{@usuario}&rol=#{@rol}"} class="rounded-3xl bg-purple-600 p-8 text-white font-bold shadow-xl hover:-translate-y-1 transition">
+            Crear propiedad en venta
+          </.link>
+
+          <.link navigate={"/propiedades?usuario=#{@usuario}&rol=#{@rol}"} class="rounded-3xl bg-white p-8 text-slate-900 font-bold shadow-xl hover:-translate-y-1 transition">
+            Ver propiedades
+          </.link>
+
+          <.link navigate={"/mensajes?usuario=#{@usuario}&rol=#{@rol}"} class="rounded-3xl bg-emerald-600 p-8 text-white font-bold shadow-xl hover:-translate-y-1 transition">
+            Mensajes
+          </.link>
+
+          <.link navigate={"/ranking?usuario=#{@usuario}&rol=#{@rol}"} class="rounded-3xl bg-blue-600 p-8 text-white font-bold shadow-xl hover:-translate-y-1 transition">
+            Ranking
+          </.link>
+
+          <.link navigate={"/resultados?usuario=#{@usuario}&rol=#{@rol}"} class="rounded-3xl bg-orange-500 p-8 text-white font-bold shadow-xl hover:-translate-y-1 transition">
+            Resultados
+          </.link>
+        </div>
+      <% end %>
+
+      <%= if @rol == "arrendador" do %>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+          <.link navigate={"/crear-propiedad?usuario=#{@usuario}&rol=#{@rol}"} class="rounded-3xl bg-pink-600 p-8 text-white font-bold shadow-xl hover:-translate-y-1 transition">
+            Crear propiedad en arriendo
+          </.link>
+
+          <.link navigate={"/propiedades?usuario=#{@usuario}&rol=#{@rol}"} class="rounded-3xl bg-white p-8 text-slate-900 font-bold shadow-xl hover:-translate-y-1 transition">
+            Ver propiedades
+          </.link>
+
+          <.link navigate={"/mensajes?usuario=#{@usuario}&rol=#{@rol}"} class="rounded-3xl bg-emerald-600 p-8 text-white font-bold shadow-xl hover:-translate-y-1 transition">
+            Mensajes
+          </.link>
+
+          <.link navigate={"/ranking?usuario=#{@usuario}&rol=#{@rol}"} class="rounded-3xl bg-blue-600 p-8 text-white font-bold shadow-xl hover:-translate-y-1 transition">
+            Ranking
+          </.link>
+
+          <.link navigate={"/resultados?usuario=#{@usuario}&rol=#{@rol}"} class="rounded-3xl bg-orange-500 p-8 text-white font-bold shadow-xl hover:-translate-y-1 transition">
+            Resultados
+          </.link>
+        </div>
+      <% end %>
 
     <% end %>
 
-  </div>
+  </main>
 
 </div>

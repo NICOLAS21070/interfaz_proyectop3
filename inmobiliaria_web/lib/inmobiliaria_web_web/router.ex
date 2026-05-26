@@ -31,6 +31,15 @@ defmodule InmobiliariaWebWeb.Router do
 
     # Mensajes
     live "/mensajes", MessagesLive
+
+    # Resiltados
+    live "/resultados", ResultsLive
+
+    #Login
+    live "/login", LoginLive
+
+    #Registro
+    live "/registro", RegisterLive
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

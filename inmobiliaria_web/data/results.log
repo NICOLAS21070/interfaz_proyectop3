@@ -1,0 +1,4 @@
+2026-05-26;cliente=samuel;responsable=nicolas;propiedad=prop2565;operacion=arriendo;ubicacion=Armenia;precio=456666;status=Completada
+2026-05-26; cliente=samuel; responsable=nicolas; propiedad=prop2565; operacion=arriendo; ubicacion=Armenia; precio=456666; status=arrendada
+2026-05-26;cliente=samuel;responsable=carlos;propiedad=prop900;operacion=compra;ubicacion=Circacia;precio=23123;status=Completada
+2026-05-26; cliente=samuel; responsable=carlos; propiedad=prop900; operacion=compra; ubicacion=Circacia; precio=23123; status=vendida

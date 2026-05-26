@@ -67,7 +67,7 @@ defp deps do
 
     # TU PROYECTO INMOBILIARIO
     {:proyecto_inmobiliaria,
-      path: "../proyecto_programacion_3/proyecto_inmobiliaria"}
+    path: "../../proyecto_programacion_3/proyecto_inmobiliaria"}
   ]
 end
 

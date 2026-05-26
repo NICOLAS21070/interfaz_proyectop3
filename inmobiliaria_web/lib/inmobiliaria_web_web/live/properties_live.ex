@@ -3,19 +3,123 @@ defmodule InmobiliariaWebWeb.PropertiesLive do
 
   alias ProyectoInmobiliaria.Property
   alias ProyectoInmobiliaria.PropertyManager
+  alias ProyectoInmobiliaria.UserManager
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
+    usuario = Map.get(params, "usuario", nil)
+    rol = Map.get(params, "rol", nil)
 
     propiedades =
-      PropertyManager.load_properties()
+      cargar_propiedades_para_usuario(usuario, rol)
+
+    filtros = %{
+      "tipo" => "",
+      "modalidad" => "",
+      "ubicacion" => "",
+      "estado" => "",
+      "precio_max" => ""
+    }
 
     {:ok,
-      assign(socket,
-        propiedades: propiedades,
-        mensaje: nil
-      )}
+     assign(socket,
+       usuario: usuario,
+       rol: rol,
+       propiedades: propiedades,
+       propiedades_filtradas: propiedades,
+       filtros: filtros,
+       mensaje: nil
+     )}
+  end
 
+  # =========================
+  # CARGA POR ROL
+  # =========================
+
+  defp cargar_propiedades_para_usuario(usuario, rol) do
+    PropertyManager.load_properties()
+    |> filtrar_por_rol(usuario, rol)
+  end
+
+  defp filtrar_por_rol(propiedades, usuario, rol) do
+    case rol do
+      "cliente" ->
+        propiedades
+
+      "vendedor" ->
+        Enum.filter(propiedades, fn propiedad ->
+          propiedad.propietario == usuario
+        end)
+
+      "arrendador" ->
+        Enum.filter(propiedades, fn propiedad ->
+          propiedad.propietario == usuario
+        end)
+
+      _ ->
+        []
+    end
+  end
+
+  # =========================
+  # FILTRAR
+  # =========================
+
+  @impl true
+  def handle_event("filtrar", params, socket) do
+    filtros = %{
+      "tipo" => Map.get(params, "tipo", ""),
+      "modalidad" => Map.get(params, "modalidad", ""),
+      "ubicacion" => Map.get(params, "ubicacion", ""),
+      "estado" => Map.get(params, "estado", ""),
+      "precio_max" => Map.get(params, "precio_max", "")
+    }
+
+    propiedades_filtradas =
+      socket.assigns.propiedades
+      |> filtrar_propiedades(filtros)
+
+    {:noreply,
+     assign(socket,
+       filtros: filtros,
+       propiedades_filtradas: propiedades_filtradas
+     )}
+  end
+
+  defp filtrar_propiedades(propiedades, filtros) do
+    Enum.filter(propiedades, fn propiedad ->
+      cumple_tipo?(propiedad, filtros["tipo"]) and
+        cumple_modalidad?(propiedad, filtros["modalidad"]) and
+        cumple_ubicacion?(propiedad, filtros["ubicacion"]) and
+        cumple_estado?(propiedad, filtros["estado"]) and
+        cumple_precio?(propiedad, filtros["precio_max"])
+    end)
+  end
+
+  defp cumple_tipo?(_propiedad, ""), do: true
+  defp cumple_tipo?(propiedad, tipo), do: propiedad.tipo == tipo
+
+  defp cumple_modalidad?(_propiedad, ""), do: true
+  defp cumple_modalidad?(propiedad, modalidad), do: propiedad.modalidad == modalidad
+
+  defp cumple_estado?(_propiedad, ""), do: true
+  defp cumple_estado?(propiedad, estado), do: propiedad.estado == estado
+
+  defp cumple_ubicacion?(_propiedad, ""), do: true
+
+  defp cumple_ubicacion?(propiedad, ubicacion) do
+    propiedad.ubicacion
+    |> String.downcase()
+    |> String.contains?(String.downcase(ubicacion))
+  end
+
+  defp cumple_precio?(_propiedad, ""), do: true
+
+  defp cumple_precio?(propiedad, precio_max) do
+    case Integer.parse(precio_max) do
+      {precio, _} -> propiedad.precio <= precio
+      :error -> true
+    end
   end
 
   # =========================
@@ -24,36 +128,44 @@ defmodule InmobiliariaWebWeb.PropertiesLive do
 
   @impl true
   def handle_event("comprar", %{"id" => id}, socket) do
+    cond do
+      socket.assigns.rol != "cliente" ->
+        {:noreply,
+         assign(socket,
+           mensaje: "❌ Solo un cliente puede comprar propiedades"
+         )}
+
+      true ->
+        comprar_propiedad(id, socket)
+    end
+  end
+
+  defp comprar_propiedad(id, socket) do
+    cliente = socket.assigns.usuario || "visitante"
 
     resultado =
-      Property.buy(id, "cliente_web")
+      Property.buy(id, cliente)
 
     case resultado do
+      {:ok, propiedad} ->
+        UserManager.update_score(propiedad.propietario, 15)
 
-      {:ok, _property} ->
+        guardar_resultado(propiedad, cliente, "compra", "vendida")
 
-        {:noreply,
-          assign(socket,
-            propiedades: PropertyManager.load_properties(),
-            mensaje: "✅ Propiedad comprada"
-          )}
+        recargar_propiedades(socket, "✅ Propiedad vendida. +15 pts para #{propiedad.propietario}")
 
       {:error, :not_available} ->
-
         {:noreply,
-          assign(socket,
-            mensaje: "❌ No disponible"
-          )}
+         assign(socket,
+           mensaje: "❌ No disponible"
+         )}
 
       error ->
-
         {:noreply,
-          assign(socket,
-            mensaje: "ERROR: #{inspect(error)}"
-          )}
-
+         assign(socket,
+           mensaje: "ERROR: #{inspect(error)}"
+         )}
     end
-
   end
 
   # =========================
@@ -62,53 +174,117 @@ defmodule InmobiliariaWebWeb.PropertiesLive do
 
   @impl true
   def handle_event("arrendar", %{"id" => id}, socket) do
+    cond do
+      socket.assigns.rol != "cliente" ->
+        {:noreply,
+         assign(socket,
+           mensaje: "❌ Solo un cliente puede arrendar propiedades"
+         )}
+
+      true ->
+        arrendar_propiedad(id, socket)
+    end
+  end
+
+  defp arrendar_propiedad(id, socket) do
+    cliente = socket.assigns.usuario || "visitante"
 
     resultado =
-      Property.rent(id, "cliente_web")
+      Property.rent(id, cliente)
 
     case resultado do
+      {:ok, propiedad} ->
+        UserManager.update_score(propiedad.propietario, 15)
 
-      {:ok, _property} ->
+        guardar_resultado(propiedad, cliente, "arriendo", "arrendada")
 
-        {:noreply,
-          assign(socket,
-            propiedades: PropertyManager.load_properties(),
-            mensaje: "✅ Propiedad arrendada"
-          )}
+        recargar_propiedades(socket, "✅ Propiedad arrendada. +15 pts para #{propiedad.propietario}")
 
       {:error, :not_available} ->
-
         {:noreply,
-          assign(socket,
-            mensaje: "❌ No disponible"
-          )}
+         assign(socket,
+           mensaje: "❌ No disponible"
+         )}
 
       error ->
-
         {:noreply,
-          assign(socket,
-            mensaje: "ERROR: #{inspect(error)}"
-          )}
-
+         assign(socket,
+           mensaje: "ERROR: #{inspect(error)}"
+         )}
     end
-
   end
 
   # =========================
-  # DISPONIBLE
+  # MARCAR DISPONIBLE
   # =========================
 
   @impl true
   def handle_event("disponible", %{"id" => id}, socket) do
+    case PropertyManager.find_property(id) do
+      {:ok, propiedad} ->
+        cond do
+          socket.assigns.rol not in ["vendedor", "arrendador"] ->
+            {:noreply,
+             assign(socket,
+               mensaje: "❌ Solo vendedores o arrendadores pueden cambiar el estado"
+             )}
 
-    Property.update_state(id, "disponible")
+          propiedad.propietario != socket.assigns.usuario ->
+            {:noreply,
+             assign(socket,
+               mensaje: "❌ Solo el propietario puede marcar esta propiedad como disponible"
+             )}
 
-    {:noreply,
-      assign(socket,
-        propiedades: PropertyManager.load_properties(),
-        mensaje: "✅ Estado actualizado"
-      )}
+          true ->
+            Property.update_state(id, "disponible")
 
+            recargar_propiedades(socket, "✅ Estado actualizado")
+        end
+
+      {:error, _reason} ->
+        {:noreply,
+         assign(socket,
+           mensaje: "❌ No se encontró la propiedad"
+         )}
+    end
   end
 
+  # =========================
+  # RECARGAR CONSERVANDO ROL Y FILTROS
+  # =========================
+
+  defp recargar_propiedades(socket, mensaje) do
+    propiedades =
+      cargar_propiedades_para_usuario(socket.assigns.usuario, socket.assigns.rol)
+
+    propiedades_filtradas =
+      filtrar_propiedades(propiedades, socket.assigns.filtros)
+
+    {:noreply,
+     assign(socket,
+       propiedades: propiedades,
+       propiedades_filtradas: propiedades_filtradas,
+       mensaje: mensaje
+     )}
+  end
+
+  # =========================
+  # GUARDAR RESULTADO
+  # =========================
+
+  defp guardar_resultado(propiedad, cliente, operacion, estado_final) do
+    fecha =
+      DateTime.utc_now()
+      |> DateTime.to_date()
+      |> Date.to_string()
+
+    linea =
+      "#{fecha}; cliente=#{cliente}; responsable=#{propiedad.propietario}; propiedad=#{propiedad.id}; operacion=#{operacion}; ubicacion=#{propiedad.ubicacion}; precio=#{propiedad.precio}; status=#{estado_final}"
+
+    File.write!(
+      "data/results.log",
+      linea <> "\n",
+      [:append]
+    )
+  end
 end
